@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🏋️‍♀️ AI Fitness & Sports Coach</title>
+    <style>
+        :root {
+            --bg-light: linear-gradient(135deg, #f0f4f8, #e6ecf3);
+            --bg-dark: linear-gradient(135deg, #1b1f27, #2a2f3a);
+            --text-light: #333;
+            --text-dark: #eee;
+            --container-light: #fff;
+            --container-dark: #2b2f3a;
+            --accent-light: #0078d7;
+            --accent-dark: #4db8ff;
+        }
+
+        body {
+            background: var(--bg-light);
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-light);
+            margin: 0;
+            transition: background 0.4s, color 0.4s;
+        }
+
+        body.dark-mode {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .container {
+            width: 70%;
+            margin: 40px auto;
+            background: var(--container-light);
+            padding: 35px 45px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: background 0.4s, color 0.4s;
+        }
+
+        body.dark-mode .container {
+            background: var(--container-dark);
+            box-shadow: 0 10px 25px rgba(255,255,255,0.05);
+        }
+
+        h1 { text-align:center; color:var(--accent-light); margin-bottom:24px; }
+        body.dark-mode h1 { color: var(--accent-dark); }
+
+        label { font-weight:600; display:block; margin-top:10px; }
+        small { display:block; color:#666; font-size:13px; margin-bottom:6px; }
+        body.dark-mode small { color:#aaa; }
+
+        input, select {
+            width:100%; padding:10px; margin-bottom:15px;
+            border:1px solid #ccc; border-radius:8px; font-size:15px;
+            background:inherit; color:inherit;
+        }
+
+        button {
+            background:#0078d7; color:#fff; border:none;
+            padding:12px 22px; border-radius:8px; cursor:pointer;
+            display:block; margin:25px auto; font-size:16px;
+        }
+
+        button:hover { background:#005fa3; }
+        body.dark-mode button { background: var(--accent-dark); }
+
+        .result {
+            background:#f7fff7; border-left:5px solid #2c9b2c;
+            padding:18px; border-radius:10px; margin-top:24px;
+        }
+
+        body.dark-mode .result {
+            background: rgba(40,50,45,0.9);
+            border-left:5px solid #52c752;
+        }
+
+        .result-header { display:flex; justify-content:space-between; flex-wrap:wrap; }
+        .result-header div { flex:1 1 30%; margin:6px 0; }
+        ul { padding-left:20px; margin-top:8px; }
+        li { margin-bottom:6px; line-height:1.6; }
+        .chartbox { width:100%; max-width:650px; margin:25px auto; }
+
+        /* Dark mode toggle */
+        .toggle-btn {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            background: none;
+            border: 2px solid var(--accent-light);
+            color: var(--accent-light);
+            border-radius: 20px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background: var(--accent-light);
+            color: #fff;
+        }
+
+        body.dark-mode .toggle-btn {
+            border-color: var(--accent-dark);
+            color: var(--accent-dark);
+        }
+
+        body.dark-mode .toggle-btn:hover {
+            background: var(--accent-dark);
+            color: #fff;
+        }
+
+        @media (max-width:800px){ .container{width:90%; padding:20px;} }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<button class="toggle-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+
+<div class="container">
+    <h1>🏋️‍♀️ AI Fitness & Sports Coach</h1>
+
+    <form action="/predict" method="post">
+        <label>Age:</label>
+        <small>Enter your age (used to estimate heart rate zones & calorie range)</small>
+        <input type="number" name="age" required>
+
+        <label>Gender:</label>
+        <small>Used for calorie estimation & hormonal health guidance</small>
+        <select name="gender" id="gender" onchange="toggleHormonal()">
+            <option>Male</option>
+            <option>Female</option>
+        </select>
+
+        <div id="hormonal_block" style="display:none;">
+            <label>Hormonal Health (Females only):</label>
+            <small>Used for menstrual health–friendly food recommendations</small>
+            <select name="hormonal_status">
+                <option>Normal</option>
+                <option>PCOS</option>
+                <option>PCOD</option>
+            </select>
+        </div>
+
+        <label>Height (cm):</label>
+        <small>Used with weight to calculate BMI automatically</small>
+        <input type="number" step="0.1" name="height" id="height" oninput="calcBMI()" required>
+
+        <label>Weight (kg):</label>
+        <small>Used with height to calculate BMI automatically</small>
+        <input type="number" step="0.1" name="weight" id="weight" oninput="calcBMI()" required>
+
+        <label>BMI:</label>
+        <small>Calculated automatically to personalize recommendations</small>
+        <input type="text" id="bmi" name="bmi" readonly>
+
+        <label>Food Preference:</label>
+        <small>Used for creating a realistic nutrition plan</small>
+        <select name="food_pref">
+            <option>Vegetarian</option>
+            <option>Non-Vegetarian</option>
+            <option>Vegan</option>
+        </select>
+
+        <label>Daily Steps:</label>
+        <small>Your average step count; higher steps → more calories burned</small>
+        <input type="number" name="daily_steps" required>
+
+        <label>Resting Heart Rate (bpm):</label>
+        <small>Used to gauge overall fitness & fatigue level</small>
+        <input type="number" name="resting_hr" required>
+
+        <label>Sleep Hours per Day:</label>
+        <small>Used for recovery quality and hormonal balance</small>
+        <input type="number" step="0.1" name="sleep_hours" required>
+
+        <label>Previous Injury:</label>
+        <small>Modifies workout plan to avoid unsafe exercises</small>
+        <select name="previous_injury">
+            <option>None</option>
+            <option>Back Pain</option>
+            <option>Knee Pain</option>
+            <option>Shoulder Injury</option>
+            <option>Ankle Sprain</option>
+        </select>
+
+        <label>Fitness Goal:</label>
+        <small>Select your main focus — guides calorie & workout type</small>
+        <select name="fitness_goal">
+            <option>Weight Loss</option>
+            <option>Muscle Gain</option>
+            <option>Endurance</option>
+            <option>General Fitness</option>
+        </select>
+
+        <label>Workout Preference:</label>
+        <small>Your favorite workout style for customized plan</small>
+        <select name="workout_preference">
+            <option>Cardio</option>
+            <option>Strength</option>
+            <option>Mixed</option>
+        </select>
+
+        <label>Workout Time (mins):</label>
+        <small>How much time you can exercise daily</small>
+        <input type="number" name="workout_time" required>
+
+        <button type="submit">Get Personalized Plan</button>
+    </form>
+
+    {% if predicted_calories %}
+    <div class="result">
+        <div class="result-header">
+            <div><strong>Predicted Calories Burned:</strong> {{ predicted_calories }} kcal</div>
+            <div><strong>Target Calories:</strong> {{ target_calories }} kcal</div>
+            <div><strong>BMI:</strong> {{ bmi }} ({{ bmi_category }})</div>
+        </div>
+
+        <h4>🍎 Nutrition Plan</h4>
+        <ul>{% for m in nutrition_data.Macronutrient_Guidelines %}<li>{{ m }}</li>{% endfor %}</ul>
+
+        <h4>🥗 Food Suggestions</h4>
+        <ul>{% for f in nutrition_data.Macro_Food_Plan %}<li>{{ f }}</li>{% endfor %}</ul>
+
+        {% if nutrition_data.Hormonal_Support %}
+        <h4>💖 Hormonal Support (Female)</h4>
+        <ul>{% for h in nutrition_data.Hormonal_Support %}<li>{{ h }}</li>{% endfor %}</ul>
+        {% endif %}
+
+        {% if nutrition_data.Sample_Meal_Plan %}
+        <h4>🍽 Sample 1-Day Meal Plan</h4>
+        <ul>{% for meal in nutrition_data.Sample_Meal_Plan %}<li>{{ meal }}</li>{% endfor %}</ul>
+        {% endif %}
+
+        <h4>🏋️ Weekly Workout Plan</h4>
+        <ul>{% for w in recommendations.Workout_Plan %}<li>{{ w }}</li>{% endfor %}</ul>
+
+        <h4>🔧 Improvements</h4>
+        <ul>{% for i in recommendations.Improvements %}<li>{{ i }}</li>{% endfor %}</ul>
+
+        <h4>💬 Motivation</h4>
+        <p>{{ recommendations.Motivation }}</p>
+
+        <div class="chartbox"><canvas id="calChart"></canvas></div>
+    </div>
+
+    <script>
+        const chartData = {{ chart_data | tojson }};
+        let ctx = document.getElementById('calChart').getContext('2d');
+
+        let chartColors = ['#7bd389', '#ff7b7b'];
+        if (document.body.classList.contains('dark-mode')) {
+            chartColors = ['#4fd1c5', '#f56565']; // teal & coral for dark mode
+        }
+
+        let calChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Target', 'Predicted Burn'],
+                datasets: [{
+                    label: 'Calories (kcal)',
+                    data: [chartData.target, chartData.predicted],
+                    backgroundColor: chartColors,
+                    borderRadius: 8
+                }]
+            },
+            options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+        });
+
+        // Re-render chart on dark mode toggle
+        function updateChartColors() {
+            const newColors = document.body.classList.contains('dark-mode') ? ['#4fd1c5', '#f56565'] : ['#7bd389', '#ff7b7b'];
+            calChart.data.datasets[0].backgroundColor = newColors;
+            calChart.update();
+        }
+    </script>
+    {% endif %}
+</div>
+
+<script>
+function toggleHormonal(){
+    const gender=document.getElementById('gender').value;
+    document.getElementById('hormonal_block').style.display=(gender==='Female')?'block':'none';
+}
+
+function calcBMI(){
+    const h=parseFloat(document.getElementById('height').value);
+    const w=parseFloat(document.getElementById('weight').value);
+    if(h>0 && w>0){
+        const bmi=(w/((h/100)**2)).toFixed(2);
+        document.getElementById('bmi').value=bmi;
+    }
+}
+
+function toggleDarkMode(){
+    const body=document.body;
+    const btn=document.querySelector('.toggle-btn');
+    body.classList.toggle('dark-mode');
+    btn.textContent = body.classList.contains('dark-mode') ? "☀️ Light Mode" : "🌙 Dark Mode";
+    if (typeof updateChartColors === 'function') updateChartColors();
+}
+</script>
+</body>
+</html>

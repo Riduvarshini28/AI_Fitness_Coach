@@ -1,0 +1,11 @@
+fitness_env/
+venv/
+__pycache__/
+.ipynb_checkpoints/
+.env
+
+data/merged_csvs/minutecaloriesnarrow_merged.csv
+data/merged_csvs/heartrate_seconds_merged.csv
+data/merged_csvs/minutemetsnarrow_merged.csv
+data/merged_csvs/minutestepsnarrow_merged.csv
+data/merged_csvs/minuteintensitiesnarrow_merged.csv
